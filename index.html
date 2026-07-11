@@ -172,7 +172,68 @@
         const KEY_MAP = { 'w': 'triangle', 'a': 'square', 's': 'cross', 'd': 'circle' };
         const COLORS = { 'triangle': '#5cd65c', 'square': '#ff66cc', 'cross': '#3399ff', 'circle': '#ff3333' };
         const APPROACH_TIME = 2000; // Updated strictly to 2 seconds for better readability
+        <script>
+    // 1. Add this near the top of your script (right below your COLORS and KEY_MAP constants):
+    const ICON_IMAGES = {
+        'triangle': new Image(),
+        'square': new Image(),
+        'cross': new Image(),
+        'circle': new Image()
+    };
+
+    ICON_IMAGES['triangle'].src = 'icons/Triangle.png';
+    ICON_IMAGES['square'].src = 'icons/Square.png';
+    ICON_IMAGES['cross'].src = 'icons/Cross.png'; 
+    ICON_IMAGES['circle'].src = 'icons/Circle.png';
+
+
+    // 2. Delete your old drawClassicIcon function and replace it with this one:
+    function drawClassicIcon(ctx, type, x, y, size, isTarget, progress = 0) {
+        ctx.save();
         
+        // Draw the target shadow/background and the sweeping clock line
+        if (isTarget) {
+            ctx.beginPath(); 
+            ctx.arc(x, y, size, 0, Math.PI * 2); 
+            ctx.fillStyle = 'rgba(0, 15, 30, 0.6)';
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)'; 
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            
+            const clockAngle = ((1 - progress) * Math.PI * 2) - (Math.PI / 2);
+            ctx.beginPath(); 
+            ctx.moveTo(x, y); 
+            ctx.lineTo(x + Math.cos(clockAngle) * size, y + Math.sin(clockAngle) * size);
+            ctx.strokeStyle = '#fff'; 
+            ctx.lineWidth = 3; 
+            ctx.stroke();
+        }
+
+        // Draw the actual PNG image from your icons folder
+        const img = ICON_IMAGES[type];
+        if (img.complete && img.naturalHeight !== 0) {
+            // size is treated as a radius, so we multiply by 2 for width/height
+            ctx.drawImage(img, x - size, y - size, size * 2, size * 2);
+        } else {
+            // Fallback just in case the image takes a second to load
+            ctx.fillStyle = COLORS[type];
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Editor mode highlight (Kept from your original code)
+        if (mode === 'edit' && draggedNote && draggedNote.type === type && Math.abs((draggedNote.x / 1920 * canvas.width) - x) < 5 && isTarget) {
+            ctx.strokeStyle = '#fff'; 
+            ctx.lineWidth = 2; 
+            ctx.strokeRect(x - size - 5, y - size - 5, (size+5)*2, (size+5)*2);
+        }
+        
+        ctx.restore();
+    }
+</script>
         let mode = 'play'; let isPlaying = false; let gameEnded = false;
         let useWebAudio = false; let audioCtx, audioBuffer, audioSource;
         let audioStartTime = 0, pausedAtTimeMs = 0; 
